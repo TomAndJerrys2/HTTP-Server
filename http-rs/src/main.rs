@@ -4,15 +4,24 @@ use std::net::TcpListener;
 use std::net::TcpStream;
 
 // present data to client
-fn handleConnection(mut stream: TcpStream) {
-    let mut connBuffer = [0; 1024]; // 1024 bytes
+fn handle_connection(mut stream: TcpStream) {
+    let mut conn_buffer = [0; 1024]; // 1024 bytes
+    stream.read(&mut conn_buffer).unwrap();
 
-    stream.read(&mut connBuffer).unwrap();
+    let get_header = b"GET / HTTP/1.1\r\n";
 
-    let contents: String = fs::read_to_string("index.html").unwrap();
+    // Handling page routing for errors
+    let (status, file_name) = if conn_buffer.starts_with(get_header) {
+        ("HTTP/1.1 200 OK", "index.html")
+    } else {
+        ("HTTP/1.1 404 NOT FOUND", "NoPage.html")
+    };
+
+    let contents: String = fs::read_to_string(file_name).unwrap();
 
     let response: String = format!(
-        "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
+        "{}\r\nContent-Length: {}\r\n\r\n{}",
+        status,
         contents.len(),
         contents
     );
@@ -26,6 +35,6 @@ fn main() {
 
     for stream in listener.incoming() {
         let stream = stream.unwrap();
-        handleConnection(stream);
+        handle_connection(stream);
     }
 }
