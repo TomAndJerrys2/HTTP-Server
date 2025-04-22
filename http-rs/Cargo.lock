@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "http-rs"
+name = "httpserv"
 version = "0.1.0"
