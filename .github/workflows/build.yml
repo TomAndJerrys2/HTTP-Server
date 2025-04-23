@@ -1,4 +1,4 @@
-name: HTTPserv
+name: httpserv
 
 on:
   push:
