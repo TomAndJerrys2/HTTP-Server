@@ -3,23 +3,14 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
+// Overall Server crate
+use mod Server;
+
+// Testing Lib
+use Wacky::MapTester;
+
 // Maximum storage size
 const MAP_MAX_SIZE: u64 = 256;
-
-enum FlagType {
-    OK = 200,
-    GOOD = 300,
-    NOT_FOUND = 404,
-    FILE_OUTOF_BOUNDS = 507
-
-    // ETC Will implement properly soon
-}
-
-// Custom Flag handling for HTTP Req/Res
-pub struct Flag {
-    flag_type: FlagType,
-
-}
 
 // Server map that tracks the size and key-elements
 pub struct ServerMap<Key, Val> {
@@ -30,6 +21,7 @@ pub struct ServerMap<Key, Val> {
 
 // Processing for the current K/V Pair and the next available
 // option that is presented in the hashmap
+#[derive(Clone)]
 pub struct KeyVal {
     key: Key,
     val: Val,
@@ -52,12 +44,17 @@ fn hash_handler<Key: Hash>(key: Key) -> u64 {
     return_hash
 }
 
-// Linear Probing to stop index clashes
-fn probe_map() {
-    todo!()
-}
-
 impl <Key: Clone + Hash + PartialEq, Val> ServerMap<Key, Val> {
+
+    const server_conf: Option<KVPairs<Key, Val> = None;
+    pub fn generate() -> ServerMap<Key, Val> {
+        ServerMap { 
+            map_size: 0, 
+            map_arr: [Self::server_conf; MAP_MAX_SIZE as usize],
+        }
+    }
+    
+    // --> CRUD Operations <--
 
     // Adds an item to the ServerMap via KV Pairs
     pub fn push(&mut self, key: Key, val: Val) -> Option<Val> {
@@ -86,13 +83,20 @@ impl <Key: Clone + Hash + PartialEq, Val> ServerMap<Key, Val> {
         let position = hash_handle % MAP_MAX_SIZE;
 
         match &self.map_arr[position as usize] {
-            Some(_) => self.
-        }
+            Some(_) => self.check_key(key, position as usize);
+            None => None,
+        }\
     }
 
     // Remove a value and handle the empty container
     pub fn remove(&self, key: Key) -> Option<Val> {
-        todo!()
+        let hash_handle: u64 = hash_handler(key.clone());
+        let position: u64 = hash_handle % MAP_MAX_SIZE;
+
+        match &self.map_arr[position as usize] {
+            Some(_) => self.rm_check_key(key, position as usize),
+            None => None,
+        }
     }
 
     // Loops through and clears all data - /handling memory
@@ -100,7 +104,86 @@ impl <Key: Clone + Hash + PartialEq, Val> ServerMap<Key, Val> {
         todo!()
     }
 
-    // Data Handling functions 
+    // Check if key exists in the map already
+    // if it exists it will return the corresponding val
+    // --> Explicitly used for checking when adding an item
+    // --> This will be refactored into a more robust function
+    fn check_key(&self, key: Key, position: usize) -> Option<Val> {
+        let mut current_pos = self.map_arr[position].as_ref().unwrap();
+
+        // If found - return value
+        if current_pos == key {
+            return Some(current_pos.value);
+        }
+
+        // Traversing the LL until we find the key
+        while let Some(node) = current_pos.next.as_ref() {
+            if node.key == key {
+                return Some(node.value);
+            }
+
+            current_pos = node; // for each iteration check
+        }
+
+        None
+    }
+
+    // Check for a keys existence before removal
+    // by iteratively performing checks on the map nodes
+
+    // Notice that some functions may appear to have SOME similar behaviour
+    // This will all be updated and considered in the refactoring process                                                                                                                                              
+    fn rm_check_key(&mut self, key: Key, position: usize) -> Option<Val> {
+        let mut current_pos = self.map_arr[position].as_ref().unwrap();
+
+        if current_pos.key == key {
+            let pos_val = current_pos.value;
+
+            // Check for next available val in the map
+            // and update it to point to
+            if let Some(node) = current_pos.next.to_owned() {
+                self.map_arr[position] = Some(*node);
+            } else {
+                self.map_arr[position] = None
+            }
+            
+            // Returns the value held by the node and updates the map size
+            self.map_size -= 1;
+            return Some(pos_val);
+        }
+
+        // Going through the hash table nodes individually
+        // until the key specified is found
+        while current_pos.next.is_some() {
+            let next = current_pos.next.as_mut().unwrap();
+
+            if next.key == key {
+                let val = next.value;
+
+                // check if there is a next value i.e != None
+                // update the hash table with some arbitray pointer 'ptr'
+                if let Some(ptr) = next.next.to_owned() {
+                    current_pos.next = Some(Box::new(*ptr));
+                } else {
+                    current.next = None;
+                }
+
+                // return the value to the node at current_pos
+                self.map_size -= 1;
+                return Some(val);
+            }
+
+            // After all checks are complete
+            // the current position will move to the next
+            // available node that isnt 'None'
+            current_pos = current_pos.next.as_mut().unwrap();
+        }
+
+        None
+    }
+
+    // --> Data Handling functions <--
+
     fn insert_new_data(&mut self, key: Key, val: Val, position: usize) {
         let data = KVPairs::new(key, val);
         self.map_arr[position] = Some(data);
@@ -145,5 +228,21 @@ impl <Key: Clone + Hash + PartialEq, Val> ServerMap<Key, Val> {
         self.map_size += 1;
 
         None
+    }
+
+    // --> Resizing and Manipulation <--
+
+    priv fn resize_server_map() {
+        // Based on KVPair entries
+        // Resizing the hashmap by * 2 when a set boundary
+        // is hit. Also taking into account the current
+        // stored elements position in the hashmap
+
+        // Since this is a custom impl for
+        // the HTTP Server Flags, Routing etc
+        // This is not a necessity and will
+        // be implemented as a side feature later (unless it is needed)
+
+        todo!()
     }
 }
