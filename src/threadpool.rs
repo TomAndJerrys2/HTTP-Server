@@ -1,5 +1,10 @@
+// Developer: Kyle Brady
+
+// For handlin multi threaded jobs (requests) and the assignment of
+// different worker threads based on the amount of requests
+
 use std::{
-    sync::{mpsc, Arc, Mutex},
+    sync::{mpsc, Arc, Mutex}, // for use of smart pointers
     thread,
 };
 
@@ -38,9 +43,11 @@ impl ThreadPool {
             workers.push(Worker::new(wkr_id, Arc::clone(&reciever)));
         }
 
+        // Returns the workers and sender sig to the thread pool
         ThreadPool { workers, sender }
     }
 
+    // Executes a Generic Thread
     pub fn execute<Type>(&self, closure: Type)
     where
         Type: FnOnce() + Send + 'static,
@@ -88,9 +95,31 @@ impl Worker {
             }
         });
 
+        // The worker gets assigned an ID and
+        // a JOB => New Thread
         Worker {
             wkr_id,
             thread: Some(thread),
         }
+    }
+}
+
+#[cfg(test)]
+mod ThreadTests {
+
+    // No Running Threads
+    // Will Cause the compiler to panic
+    #[test]
+    fn test_no_threads() {
+        let tester = ThreadPool::new(0);
+    }
+
+    // Size of pool must = workers in a pool
+    #[test]
+    fn test_size_of_pool(mut n: i32) {
+        let tester = ThreadPool::new(n);
+        assert_eq!(tester.wkr_threads.len(), n);
+
+        // Testing if the threadpool is the same size as our worker amount
     }
 }
