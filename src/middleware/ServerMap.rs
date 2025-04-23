@@ -46,7 +46,8 @@ fn hash_handler<Key: Hash>(key: Key) -> u64 {
 
 impl <Key: Clone + Hash + PartialEq, Val> ServerMap<Key, Val> {
 
-    const server_conf: Option<KVPairs<Key, Val> = None;
+    const server_conf: Option<KVPairs<Key, Val> = None
+
     pub fn generate() -> ServerMap<Key, Val> {
         ServerMap { 
             map_size: 0, 
@@ -101,7 +102,9 @@ impl <Key: Clone + Hash + PartialEq, Val> ServerMap<Key, Val> {
 
     // Loops through and clears all data - /handling memory
     priv fn clear(&mut self) {
-        todo!()
+        // Overwriting the entire array
+        self.map_size -= 0;
+        self.map_arr = [Self::server_conf; MAP_MAX_SIZE as usize];
     }
 
     // Check if key exists in the map already
